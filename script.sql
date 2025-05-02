@@ -1,5 +1,7 @@
+-- Enable foreign key constraints in SQLite
 PRAGMA foreign_keys = ON;
 
+-- Create the 'books' table if it doesn't exist
 CREATE TABLE IF NOT EXISTS books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title VARCHAR(200) NOT NULL UNIQUE,  
@@ -8,6 +10,7 @@ CREATE TABLE IF NOT EXISTS books (
     available_copies INTEGER NOT NULL
 );
 
+-- Create the 'members' table if it doesn't exist
 CREATE TABLE IF NOT EXISTS members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -15,6 +18,7 @@ CREATE TABLE IF NOT EXISTS members (
     join_date DATE DEFAULT CURRENT_DATE
 );
 
+-- Create the 'borrowed_books' table if it doesn't exist
 CREATE TABLE IF NOT EXISTS borrowed_books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     member_id INTEGER NOT NULL,
@@ -25,6 +29,7 @@ CREATE TABLE IF NOT EXISTS borrowed_books (
     FOREIGN KEY (book_id) REFERENCES books(id)
 );
 
+-- Insert dummy data into the 'books' table
 INSERT INTO books (title, author, published_year, available_copies) VALUES
 ('Pride and Prejudice', 'Jane Austen', 1813, 4),
 ('The Hobbit', 'J.R.R. Tolkien', 1937, 3),
@@ -33,6 +38,7 @@ INSERT INTO books (title, author, published_year, available_copies) VALUES
 ('Moby-Dick', 'Herman Melville', 1851, 1),
 ('War and Peace', 'Leo Tolstoy', 1869, 2);
 
+-- Insert dummy data into the 'members' table
 INSERT INTO members (name, email, join_date) VALUES
 ('Alice Wonderland', 'alice@example.com', '2025-03-15'),
 ('Bob Builder', 'bob@example.com', '2025-02-10'),
@@ -40,6 +46,7 @@ INSERT INTO members (name, email, join_date) VALUES
 ('Diana Prince', 'diana@example.com', '2025-04-01'),
 ('Edward Scissorhands', 'edward@example.com', '2025-04-20');
 
+-- Insert dummy data into the 'borrowed_books' table
 INSERT INTO borrowed_books (member_id, book_id, borrow_date, return_date) VALUES
 (1, 2, '2025-04-10', '2025-04-20'),  
 (2, 3, '2025-04-15', NULL),          
