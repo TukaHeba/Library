@@ -1,5 +1,6 @@
-from Classes.Book import Book
+from datetime import datetime, timedelta
 from Classes.Database import Database
+from Classes.Book import Book
 from Classes.Member import Member
 from Classes.BorrowedBook import BorrowedBook
 
@@ -9,13 +10,12 @@ class LibraryManager:
         self.db.initialize_database()  
         self.db.connect()
 
-    # Display available books for borroing in the database
+    # Display available books for borrowing in the database
     def list_available_books(self):
-        self.db.cursor.execute('SELECT * FROM books WHERE available_copies > 0')
-        books = self.db.cursor.fetchall()
-        print("\nAvailable Books:")
+        books = Book.get_available_books(self.db)
+        print("\n------ Available Books ------")
         for book in books:
-            print(f"{book[0]}. {book[1]} by {book[2]}, Published: {book[3]}, Available copies: {book[4]}")
+            print(f"Title: {book.title} | Author: {book.author} | Published at: {book.year} | Available copies: {book.copies}")
 
     # Add a new book to the database
     def add_book(self):
@@ -28,6 +28,7 @@ class LibraryManager:
         book.create(self.db)
         print("The book has been added successfully!")
 
+    # Close the connection to the database
     def close(self):
         self.db.close()
 
@@ -39,32 +40,52 @@ class LibraryManager:
         member = Member(name, email)
         member.create(self.db)
         print(f"The member '{member.name}' has been added successfully!")
+ 
+    # Borrow a book if both the member exists and the book is available
+    def borrow_a_book(self):
+        member_id = int(input("Enter Member ID: "))
+        book_id = int(input("Enter Book ID: "))
 
-    # Borrow a book from the library
-    def borrow_book(self, member: Member, book: Book):
-        if book.is_available():
-            member.borrow_book(book)
-            borrowed_book = BorrowedBook(member_id=member.id, book_id=book.id)
-            borrowed_book.create(self.db)
-            print(f"{member.name} borrowed '{book.title}'.")
+        if not Member.exists(self.db, member_id):
+            print("Member not found.")
+            return
 
-    # Return a book to the library
-    def return_book(self, member: Member, book: Book):
-        member.return_book(book)
-        borrowed_book = BorrowedBook(member_id=member.id, book_id=book.id)
-        borrowed_book.update_return_date(self.db)
-        print(f"{member.name} returned '{book.title}'.")
+        if not Book.is_available(self.db, book_id):
+            print("Book not available.")
+            return
 
-    # List borrowed books that have not been returned
-    def list_borrowed_books(self):
-        BorrowedBook.get_unreturned_books(self.db)
+        Book.borrow(self.db, book_id)
 
-    # List members who borrowed books in the last 30 days
+        borrowed = BorrowedBook(member_id, book_id)
+        borrowed.create(self.db)
+        print("Book borrowed successfully.")
+
+    # Return a book operation
+    def return_a_book(self):
+        member_id = int(input("Enter Member ID: "))
+        book_id = int(input("Enter Book ID: "))
+        BorrowedBook.mark_as_returned(self.db, member_id, book_id)
+        Book.return_book(self.db, book_id)
+        print("Book returned successfully.")
+
+    # Display all books that have not been returned yet
+    def list_unreturned_books(self):
+        results = BorrowedBook.get_unreturned_books(self.db)
+        print("\n --- Unreturned Books ---")
+        for title in results:
+            print(f"'{title[0]}' is still not returned")
+
+    # Display members who borrowed books within the last 30 days
     def list_members_borrowed_books_last30days(self):
-        BorrowedBook.get_members_borrowed_last_30_days(self.db)
+        members = BorrowedBook.get_members_borrowed_last_30_days(self.db)        
+        print("\n --- Members who borrowed books in the last 30 days ---")
+        for name in members:
+            print(f"{name[0]}")
 
-
-
-
-
-
+    # Display all borrowed books with return status
+    def list_borrowed_books(self):
+        records = BorrowedBook.get_all_borrowed_books(self.db)
+        print("\n --- All Borrowed Books ---")
+        for title, member, borrow_date, return_date in records:
+            status = return_date if return_date else "Not Returned"
+            print(f"'{title}' borrowed by {member} on {borrow_date} - {status}")
